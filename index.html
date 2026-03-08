@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="apple-mobile-web-app-title" content="割り勘App"/>
+  <title>割り勘App</title>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+    body { background: #f4f4f4; font-family: -apple-system, Inter, sans-serif;
+           padding-bottom: env(safe-area-inset-bottom); }
+    input, select, button { font-family: inherit; }
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    .app { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 40px; }
+
+    .header { background: #fff; padding: 16px 20px; width: 100%;
+              padding-top: calc(16px + env(safe-area-inset-top));
+              position: sticky; top: 0; z-index: 10; border-bottom: 1px solid #e0e0e0; }
+    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .header h1 { font-size: 20px; font-weight: 800; color: #111; }
+    .btn-add { background: #f0f0f0; color: #111; border: none; border-radius: 10px;
+               padding: 10px 18px; font-weight: 700; font-size: 15px; cursor: pointer; }
+    .month-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .month-nav button { background: #f0f0f0; border: none; border-radius: 8px;
+                        padding: 6px 14px; font-size: 16px; cursor: pointer; color: #111; }
+    .month-label { font-size: 15px; font-weight: 700; color: #111; }
+
+    .card { background: #fff; border-radius: 16px; overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,.08); margin: 16px 16px 0; }
+    .form-body { padding: 16px; background: #fafafa; }
+    .payer-row, .split-row { display: flex; gap: 8px; margin-bottom: 12px; }
+    .payer-btn { flex: 1; padding: 12px; border-radius: 10px; border: none; cursor: pointer;
+                 font-weight: 700; font-size: 15px; background: #f0f0f0; color: #888; }
+    .amount-wrap { position: relative; margin-bottom: 12px; }
+    .amount-wrap span { position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+                        font-size: 22px; font-weight: 700; color: #aaa; pointer-events: none; }
+    .amount-input { width: 100%; background: #f7f7f7; border: 1px solid #ddd; border-radius: 12px;
+                    padding: 16px 16px 16px 40px; font-size: 28px; font-weight: 800; color: #111; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .chip { padding: 8px 14px; border-radius: 20px; border: none; cursor: pointer;
+            font-size: 14px; font-weight: 600; background: #f0f0f0; color: #666; }
+    .chip.active { background: #333; color: #fff; }
+    .split-btn { flex: 1; padding: 10px 4px; border-radius: 10px; border: none; cursor: pointer;
+                 font-size: 14px; font-weight: 700; background: #f0f0f0; color: #aaa; }
+    .date-note { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+    .field { width: 100%; background: #fff; border: 1px solid #ddd; border-radius: 10px;
+             padding: 10px 12px; font-size: 16px; color: #111; }
+    .form-actions { display: flex; gap: 8px; }
+    .btn-submit { flex: 1; background: #333; color: #fff; border: none; border-radius: 12px;
+                  padding: 14px; font-weight: 700; font-size: 16px; cursor: pointer; }
+    .btn-cancel { flex: 1; background: #f0f0f0; color: #555; border: none; border-radius: 12px;
+                  padding: 14px; font-size: 16px; cursor: pointer; }
+    .settlement-main { padding: 16px; }
+    .settlement-row { display: flex; align-items: center; justify-content: space-between; }
+    .member-tag { border-radius: 6px; padding: 4px 12px; font-weight: 700; font-size: 14px; color: #fff; }
+    .settlement-amount { font-weight: 800; font-size: 22px; color: #111; }
+    .settlement-none { font-weight: 700; font-size: 16px; color: #111; text-align: center; }
+    .stats { display: flex; border-top: 1px solid #f0f0f0; }
+    .stat { flex: 1; background: #fafafa; padding: 12px; border-right: 1px solid #f0f0f0; }
+    .stat:last-child { border-right: none; }
+    .stat-label { color: #888; font-size: 11px; margin-bottom: 4px; }
+    .stat-value { color: #111; font-weight: 700; font-size: 15px; }
+    .hist-toggle { width: 100%; display: flex; justify-content: space-between; align-items: center;
+                   padding: 16px; background: #fff; border: none; cursor: pointer; }
+    .hist-title { font-weight: 700; font-size: 15px; color: #111; }
+    .txn-row { display: flex; align-items: center; padding: 14px 16px; gap: 10px;
+               background: #fff; border-top: 1px solid #f0f0f0; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center;
+              justify-content: center; flex-shrink: 0; font-size: 13px; font-weight: 700; color: #fff; }
+    .txn-info { flex: 1; min-width: 0; }
+    .txn-cat { font-size: 14px; font-weight: 600; color: #111; }
+    .txn-note { color: #aaa; font-weight: 400; }
+    .txn-date { font-size: 12px; color: #aaa; margin-top: 2px; }
+    .split-badge { flex-shrink: 0; color: #fff; border: none; border-radius: 6px;
+                   padding: 4px 10px; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .txn-amount { font-size: 15px; font-weight: 700; color: #111; flex-shrink: 0; }
+    .icon-btn { background: transparent; border: none; cursor: pointer; padding: 8px;
+                font-size: 18px; flex-shrink: 0; }
+    .empty { padding: 24px; text-align: center; color: #aaa; font-size: 14px; }
+  </style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script>
+const CATEGORIES = ["食費","交通","娯楽","宿泊","買い物","その他"];
+const MEMBERS    = ["自分","彼女"];
+const SPLITS     = [
+  { key:"half", label:"折半", bg:"#333" },
+  { key:"me",   label:"自分", bg:"#3b82f6" },
+  { key:"her",  label:"彼女", bg:"#ec4899" },
+];
+const MC = { "自分":"#3b82f6", "彼女":"#ec4899" };
+const fmt     = n => "¥" + Math.abs(Math.round(n)).toLocaleString();
+const toMonth = d => d.slice(0, 7); // "2026-03"
+const fmtMonth = m => { const [y,mo] = m.split("-"); return y+"年"+parseInt(mo)+"月"; };
+const today   = () => new Date().toISOString().slice(0,10);
+const curMonth= () => toMonth(today());
+const blank   = (month) => ({ paidBy:"自分", category:"食費", amount:"", date: month+"-01", note:"", split:"half" });
+const splitOf = k => SPLITS.find(s => s.key === k);
+
+const STORAGE_KEY = "warikan_txns";
+const loadTxns = () => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) { return []; } };
+const saveTxns = t => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(t)); } catch(e) {} };
+
+let st = {
+  txns: loadTxns(),
+  month: curMonth(),
+  form: blank(curMonth()),
+  showForm: false,
+  editId: null,
+  editForm: null,
+  showHist: true,
+};
+let formDraft = { amount:"", note:"", date: st.month+"-01" };
+let editDraft = { amount:"", note:"", date:"" };
+
+function set(patch) {
+  st = Object.assign({}, st, typeof patch === "function" ? patch(st) : patch);
+  saveTxns(st.txns);
+  render();
+}
+
+function shiftMonth(delta) {
+  const [y, m] = st.month.split("-").map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  const nm = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
+  formDraft = { amount:"", note:"", date: nm+"-01" };
+  set({ month: nm, form: blank(nm), showForm: false, editId: null });
+}
+
+function calcSettlement(txns) {
+  const d = txns.reduce((acc, t) => {
+    const p = t.paidBy === "自分" ? t.amount : 0;
+    return acc + (t.split==="half" ? t.amount/2-p : t.split==="me" ? t.amount-p : -p);
+  }, 0);
+  if (d >  0.5) return { from:"自分", to:"彼女", amount:Math.round(d) };
+  if (d < -0.5) return { from:"彼女", to:"自分", amount:Math.round(-d) };
+  return null;
+}
+
+function e(tag, cls, props) {
+  const el = document.createElement(tag);
+  if (cls) el.className = cls;
+  if (props) Object.entries(props).forEach(([k,v]) => {
+    if (k.startsWith("on")) el.addEventListener(k.slice(2).toLowerCase(), v);
+    else if (k === "style") Object.assign(el.style, v);
+    else el[k] = v;
+  });
+  return el;
+}
+function append(parent, ...children) {
+  children.flat().forEach(c => c != null && parent.append(c));
+  return parent;
+}
+
+function buildForm(form, draft, onFormChange, onSubmit, onCancel, submitLabel) {
+  const wrap = e("div","form-body");
+
+  const payerRow = append(e("div","payer-row"),
+    ...MEMBERS.map(p => {
+      const b = e("button","payer-btn", { textContent: p+"が払う", onclick: () => onFormChange("paidBy", p) });
+      if (form.paidBy === p) { b.style.backgroundColor = MC[p]; b.style.color = "#fff"; }
+      return b;
+    })
+  );
+
+  const amountWrap = e("div","amount-wrap");
+  const amountSpan = e("span"); amountSpan.textContent = "¥";
+  const amountInput = e("input","amount-input", { type:"number", inputMode:"numeric", placeholder:"0" });
+  amountInput.value = draft.amount;
+  amountInput.addEventListener("input", ev => { draft.amount = ev.target.value; });
+  append(amountWrap, amountSpan, amountInput);
+
+  const chips = append(e("div","chips"),
+    ...CATEGORIES.map(c => {
+      const b = e("button","chip"+(form.category===c?" active":""), { textContent:c, onclick: () => onFormChange("category", c) });
+      return b;
+    })
+  );
+
+  const splitRow = append(e("div","split-row"),
+    ...SPLITS.map(m => {
+      const b = e("button","split-btn", { textContent:m.label, onclick: () => onFormChange("split", m.key) });
+      if (form.split === m.key) { b.style.backgroundColor = m.bg; b.style.color = "#fff"; }
+      return b;
+    })
+  );
+
+  const dateNote = e("div","date-note");
+  const dateInput = e("input","field", { type:"date" });
+  dateInput.value = draft.date;
+  dateInput.addEventListener("change", ev => { draft.date = ev.target.value; });
+  const noteInput = e("input","field", { placeholder:"メモ" });
+  noteInput.value = draft.note;
+  noteInput.addEventListener("input", ev => { draft.note = ev.target.value; });
+  append(dateNote, dateInput, noteInput);
+
+  const actions = append(e("div","form-actions"),
+    e("button","btn-submit", { textContent: submitLabel,
+      onclick: () => onSubmit(amountInput.value, dateInput.value, noteInput.value) }),
+    onCancel ? e("button","btn-cancel", { textContent:"キャンセル", onclick: onCancel }) : null
+  );
+
+  return append(wrap, payerRow, amountWrap, chips, splitRow, dateNote, actions);
+}
+
+function render() {
+  const { txns, month, form, showForm, editId, editForm, showHist } = st;
+
+  // Filter to current month
+  const monthTxns = txns.filter(t => toMonth(t.date) === month);
+  const settlement = calcSettlement(monthTxns);
+  const total = monthTxns.reduce((s,t) => s+t.amount, 0);
+  const paid = { "自分":0, "彼女":0 };
+  monthTxns.forEach(t => paid[t.paidBy] += t.amount);
+
+  const root = e("div","app");
+
+  // Header
+  const header = e("div","header");
+  const headerTop = append(e("div","header-top"),
+    append(e("h1"), "割り勘App"),
+    e("button","btn-add", { textContent: showForm ? "✕ 閉じる" : "+ 追加",
+      onclick: () => { formDraft = { amount:"", note:"", date: month+"-01" }; set({ showForm:!showForm, editId:null, editForm:null, form:blank(month) }); } })
+  );
+  const monthNav = append(e("div","month-nav"),
+    e("button","", { textContent:"‹", onclick: () => shiftMonth(-1) }),
+    append(e("span","month-label"), fmtMonth(month)),
+    e("button","", { textContent:"›", onclick: () => shiftMonth(1) })
+  );
+  append(header, headerTop, monthNav);
+  append(root, header);
+
+  // Add form
+  if (showForm) {
+    const formCard = e("div","card");
+    append(formCard, buildForm(form, formDraft,
+      (k,v) => set({ form: Object.assign({}, st.form, {[k]:v}) }),
+      (amount, date, note) => {
+        if (!amount || isNaN(amount)) return;
+        const newTxn = Object.assign({}, st.form, { id:Date.now(), amount:Number(amount), date, note });
+        set(s => ({ txns:[...s.txns, newTxn], form:blank(month), showForm:false }));
+        formDraft = { amount:"", note:"", date: month+"-01" };
+      },
+      null, "追加する"
+    ));
+    append(root, formCard);
+  }
+
+  // Settlement
+  const settlCard = e("div","card");
+  const settlMain = e("div","settlement-main");
+  if (settlement) {
+    const row = e("div","settlement-row");
+    const tags = e("div","", { style:{ display:"flex", alignItems:"center", gap:"8px" } });
+    append(tags,
+      e("span","member-tag", { textContent:settlement.from, style:{ backgroundColor:MC[settlement.from] } }),
+      (() => { const a=e("span"); a.textContent="→"; a.style.cssText="color:#aaa;font-size:18px;"; return a; })(),
+      e("span","member-tag", { textContent:settlement.to, style:{ backgroundColor:MC[settlement.to] } })
+    );
+    const amt = e("span","settlement-amount"); amt.textContent = fmt(settlement.amount);
+    append(row, tags, amt);
+    append(settlMain, row);
+  } else {
+    const none = e("div","settlement-none"); none.textContent = "精算なし 🎉";
+    append(settlMain, none);
+  }
+  const stats = e("div","stats");
+  ["自分","彼女","合計"].forEach((label,i) => {
+    const stat = e("div","stat");
+    append(stat,
+      (() => { const l=e("div","stat-label"); l.textContent=i<2?label+"が支払い":"合計"; return l; })(),
+      (() => { const v=e("div","stat-value"); v.textContent=fmt(i<2?paid[label]:total); return v; })()
+    );
+    append(stats, stat);
+  });
+  append(settlCard, settlMain, stats);
+  append(root, settlCard);
+
+  // History
+  const histCard = e("div","card");
+  const histToggle = e("button","hist-toggle", { onclick: () => set({ showHist:!showHist }) });
+  const histTitle = e("span","hist-title"); histTitle.textContent = "履歴 ("+monthTxns.length+"件)";
+  const histArrow = e("span"); histArrow.textContent = showHist ? "︿" : "﹀"; histArrow.style.color="#aaa";
+  append(histToggle, histTitle, histArrow);
+  append(histCard, histToggle);
+
+  if (showHist) {
+    if (monthTxns.length === 0) {
+      const empty = e("div","empty"); empty.textContent = "この月の記録はありません";
+      append(histCard, empty);
+    } else {
+      [...monthTxns].sort((a,b) => b.date.localeCompare(a.date)).forEach(t => {
+        const wrap = e("div");
+        if (editId === t.id) {
+          append(wrap, buildForm(editForm, editDraft,
+            (k,v) => set({ editForm: Object.assign({}, st.editForm, {[k]:v}) }),
+            (amount, date, note) => {
+              if (!amount || isNaN(amount)) return;
+              const updated = Object.assign({}, st.editForm, { amount:Number(amount), date, note });
+              set(s => ({ txns:s.txns.map(x => x.id===editId ? updated : x), editId:null, editForm:null }));
+            },
+            () => set({ editId:null, editForm:null }), "保存"
+          ));
+        } else {
+          const row = e("div","txn-row");
+          const avatar = e("div","avatar", { textContent: t.paidBy==="自分"?"私":"彼", style:{ backgroundColor:MC[t.paidBy] } });
+          const info = e("div","txn-info");
+          const cat = e("div","txn-cat"); cat.textContent = t.category;
+          if (t.note) { const n=e("span","txn-note"); n.textContent=" · "+t.note; cat.append(n); }
+          const dt = e("div","txn-date"); dt.textContent = t.date;
+          append(info, cat, dt);
+          const sp = splitOf(t.split);
+          const badge = e("button","split-badge", { textContent:sp.label, style:{ backgroundColor:sp.bg },
+            onclick: () => { const i=SPLITS.findIndex(s=>s.key===t.split); set(s=>({ txns:s.txns.map(x=>x.id!==t.id?x:Object.assign({},x,{split:SPLITS[(i+1)%SPLITS.length].key})) })); }
+          });
+          const amt = e("div","txn-amount"); amt.textContent = fmt(t.amount);
+          const editBtn = e("button","icon-btn", { textContent:"✎", style:{ color:"#bbb" },
+            onclick: () => { editDraft = { amount:String(t.amount), note:t.note, date:t.date }; set({ editId:t.id, editForm:Object.assign({},t) }); }
+          });
+          const delBtn = e("button","icon-btn", { textContent:"✕", style:{ color:"#ddd" },
+            onclick: () => set(s=>({ txns:s.txns.filter(x=>x.id!==t.id) }))
+          });
+          append(row, avatar, info, badge, amt, editBtn, delBtn);
+          append(wrap, row);
+        }
+        append(histCard, wrap);
+      });
+    }
+  }
+  append(root, histCard);
+
+  document.getElementById("app").replaceWith(root);
+  root.id = "app";
+}
+
+render();
+</script>
+</body>
+</html>
